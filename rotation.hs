@@ -14,15 +14,15 @@ import Control.Monad
 type Graph = [Vertex]
 type Vertex = [Int] --list of darts as indices to Graph
 type Dart = (Int, Int) --(index of vertex, index of edge)
-type Perm = [Int] --permutation
+data Permutation = Perm [Int] --permutation
 
 
 --functions used to generate permutations sigma and theta
 theta :: Graph -> Dart -> Dart
-theta g (v,i) = (i, fromJust $ elemIndex v $ g !! i)
+theta g (v,e) = (g !! e, fromJust $ elemIndex v $ g !! e)
 
 sigma :: Graph -> Dart -> Dart
-sigma g (v,i) = (v, (i + 1) `mod` length $ g !! v)
+sigma g (v,e) = (v, (e + 1) `mod` length $ g !! v)
 
 --group class for easy construction of groups
 class Group g where
@@ -33,39 +33,45 @@ class Group g where
 	
 --group instances
 
-instance Group Perm where --permuation group
-	e = [0,1..]
-	gmul a b = map (\x -> b !! x) a
+instance Group Permutation where --permuation group
+	e = Perm [0,1..]
+	gmul (Perm a) (Perm b) = Perm $ map (\x -> b !! x) a
 	a * b = a `gmul` b
-	inv a = invBubSort a 0
+	inv (Perm a) = Perm $ invBubSort a 0
 		where invBubSort a n = case elemIndex n a of Just x -> x:(invBubSort a n+1)
 							     Nothing -> []
 		-- ^ O(n2) is the least of our worries
 
 --construct embedded rotation system from graph g
 
-rotations :: Graph -> (Perm, Perm)
+rotations :: Graph -> (Permutation, Permutation)
 --construct set of all Darts (connected vertex, di-edges)
 --generate permutations for the darts
-rotations g = (map sigma b, map theta b)
-	where darts [] n = []
-	      darts (v:vs) n = zip (repeat n) v ++ darts vs n+1
-	      b = darts g 0
+rotations g = (Perm $ map sigma b, Perm $ map theta b)
+	where b = darts g
+
+
+--construct set of all darts from a digraph
+darts :: Graph -> [Dart]
+darts g = darts' g 0
+	where darts' [] n = []
+	      darts' (v:vs) n = zip (repeat n) v ++ darts' vs n+1
 
 
 --to find the genus use Euler formula -> genus = 1 -1/2(|Z(sig)|-|Z(th)|+|Z(sig*th)|)
 --where Z is the set of orbits of a permutation
 
-orbit :: Perm -> Int -> [Int] --note that this implementation will not work for infinite sets
-orbit p i = let orbit' i s = if (p!!i) `elem` s
-			       then []
-			       else (p!!i):(orbit' (p!!i) $ (p!!i):s)
-	     in orbit' i []
+orbit :: Permutation -> Int -> [Int] --note that this implementation will not iterate infinite sets
+orbit (Perm p) i = let orbit' i s = if (p!!i) `elem` s
+				    then []
+				    else (p!!i):(orbit' (p!!i) $ (p!!i):s)
+		   in orbit' i []
 
 
 --find the genus of graph g
 genus :: Graph -> Int
-genus g = let sz a = length $ partitionWith orbit a
+genus g = let b = darts g
+	      sz a = length $ partitionWith (orbit a) b
 	      rot = rotations g
 	      t = snd rot
 	      s = fst rot
@@ -78,7 +84,7 @@ genus g = let sz a = length $ partitionWith orbit a
 ----------------utility----------------
 partitionWith :: (a -> [a]) -> [a] -> [[a]]
 partitionWith f [] = []
-partitionWith f (x:xs) = (f x):(filter (\a -> ! a `elem` f x) xs)
+partitionWith f (x:xs) = (f x):(filter (\a -> not $ a `elem` f x) xs)
 
 
 
