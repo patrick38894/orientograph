@@ -36,7 +36,7 @@ class Group g where
 instance Group Perm where --permuation group
 	e = [0,1..]
 	gmul a b = map (\x -> b !! x) a
-	a * b = a gmul b
+	a * b = a `gmul` b
 	inv a = invBubSort a 0
 		where invBubSort a n = case elemIndex n a of Just x -> x:(invBubSort a n+1)
 							     Nothing -> []
@@ -46,7 +46,7 @@ instance Group Perm where --permuation group
 
 rotations :: Graph -> (Perm, Perm)
 --construct set of all Darts (connected vertex, di-edges)
---generate group of permutations for the darts
+--generate permutations for the darts
 rotations g = (map sigma b, map theta b)
 	where darts [] n = []
 	      darts (v:vs) n = zip (repeat n) v ++ darts vs n+1
@@ -56,16 +56,16 @@ rotations g = (map sigma b, map theta b)
 --to find the genus use Euler formula -> genus = 1 -1/2(|Z(sig)|-|Z(th)|+|Z(sig*th)|)
 --where Z is the set of orbits of a permutation
 
-orbits :: Perm -> Int -> [Int] --note that this implementation will not work for infinite sets
-orbits p i = let orbits' i s = if (p!!i) `elem` s
+orbit :: Perm -> Int -> [Int] --note that this implementation will not work for infinite sets
+orbit p i = let orbit' i s = if (p!!i) `elem` s
 			       then []
-			       else (p!!i):(orbits (p!!i) $ (p!!i):s)
-	     in orbits' i []
+			       else (p!!i):(orbit' (p!!i) $ (p!!i):s)
+	     in orbit' i []
 
 
 --find the genus of graph g
 genus :: Graph -> Int
-genus g = let sz a = length $ orbits a
+genus g = let sz a = length $ partitionWith orbit a
 	      rot = rotations g
 	      t = snd rot
 	      s = fst rot
@@ -75,6 +75,10 @@ genus g = let sz a = length $ orbits a
 
 
 
+----------------utility----------------
+partitionWith :: (a -> [a]) -> [a] -> [[a]]
+partitionWith f [] = []
+partitionWith f (x:xs) = (f x):(filter (\a -> ! a `elem` f x) xs)
 
 
 
