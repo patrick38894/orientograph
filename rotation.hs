@@ -15,7 +15,6 @@ type Graph = [Vertex]
 type Vertex = [Int] --list of darts as indices to Graph
 type Dart = (Int, Int) --(index of vertex, index of edge)
 type Perm = [Int] --permutation
-type G = (Perm, Perm) --group element
 
 
 --functions used to generate permutations sigma and theta
