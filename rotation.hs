@@ -14,15 +14,15 @@ import Control.Monad
 type Graph = [Vertex]
 type Vertex = [Int] --list of darts as indices to Graph
 type Dart = (Int, Int) --(index of vertex, index of edge)
-data Permutation = Perm [Int] --permutation
+data Permutation = Perm [Int] deriving Show--permutation
 
 
 --functions used to generate permutations sigma and theta
 theta :: Graph -> Dart -> Dart
-theta g (v,e) = (e, fromJust $ elemIndex v $ g !! e)
+theta g (v,e) = (e, v)
 
 sigma :: Graph -> Dart -> Dart
-sigma g (v,e) = (v, (e + 1) `mod` (length $ g !! v))
+sigma g (v,e) = (v, g !! v !! (((fromJust $ elemIndex e $ (g !! v)) + 1) `mod` (length $ g !! v)))
 
 --group class for easy construction of groups
 class Group g where
@@ -47,6 +47,7 @@ instance Group Permutation where --permuation group
 --create a permutation from a list of mapping pairs
 pzip :: [(Int, Int)] -> Permutation
 pzip a = Perm $ map snd $ sortBy (\x y -> compare (fst x) (fst y)) a
+-- ^^ this function is wrong-should create a permutation of darts -- need a good mapping
 
 --construct embedded rotation system from graph g
 
