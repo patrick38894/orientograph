@@ -46,7 +46,7 @@ instance Group Permutation where --permuation group
 
 --create a permutation from a list of mapping pairs
 pzip :: [(Int, Int)] -> Permutation
-pzip a = Perm $ map snd $ sortBy (\x y -> compare (fst x) (fst y)) a
+pzip a = Perm $ map fromJust $ map (flip elemIndex (sortBy (\x y -> if (fst x) /= (fst y) then compare (fst x) (fst y) else compare (snd x) (snd y)) a)) a
 -- ^^ this function is wrong-should create a permutation of darts -- need a good mapping
 
 --construct embedded rotation system from graph g
